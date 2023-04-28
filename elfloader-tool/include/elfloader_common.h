@@ -74,6 +74,18 @@ struct image_info {
     word_t phys_virt_offset;
 };
 
+// we assume the max numbers of the available memory regions
+#define M_AVA_NUMS (64)
+//available memory regions
+struct mem_reg {
+    unsigned long start;
+    unsigned long end;
+};
+struct mem_info {
+    unsigned int nums;
+    struct mem_reg ava_regs[M_AVA_NUMS];
+};
+
 extern struct image_info kernel_info;
 extern struct image_info user_info;
 extern void const *dtb;

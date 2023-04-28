@@ -63,7 +63,8 @@ void non_boot_main(void)
     /* Jump to the kernel. Note: Our DTB is smaller than 4 GiB. */
     ((init_arm_kernel_t)kernel_info.virt_entry)(user_info.phys_region_start,
                                                 user_info.phys_region_end, user_info.phys_virt_offset,
-                                                user_info.virt_entry, (paddr_t)dtb, (uint32_t)dtb_size);
+                                                user_info.virt_entry, (paddr_t)dtb, (uint32_t)dtb_size,
+                                                0);
 
     printf("AP Kernel returned back to the elf-loader.\n");
     abort();

@@ -242,7 +242,8 @@ void continue_boot(int was_relocated)
                                                 user_info.phys_virt_offset,
                                                 user_info.virt_entry,
                                                 (word_t)dtb,
-                                                (uint32_t)dtb_size);
+                                                (uint32_t)dtb_size,
+                                                (paddr_t)&m_info);
 
     /* We should never get here. */
     printf("ERROR: Kernel returned back to the ELF Loader\n");

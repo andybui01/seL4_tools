@@ -17,7 +17,8 @@ typedef void (*init_arm_kernel_t)(word_t ui_p_reg_start,
                                   word_t pv_offset,
                                   word_t v_entry,
                                   word_t dtb,
-                                  word_t dtb_size);
+                                  word_t dtb_size,
+                                  paddr_t m_info);
 
 
 /* Enables the mmu for EL1&0 translation regime. */

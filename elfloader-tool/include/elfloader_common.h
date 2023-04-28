@@ -86,6 +86,7 @@ struct mem_info {
     struct mem_reg ava_regs[M_AVA_NUMS];
 };
 
+extern struct mem_info m_info;
 extern struct image_info kernel_info;
 extern struct image_info user_info;
 extern void const *dtb;

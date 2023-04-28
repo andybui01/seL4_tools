@@ -18,6 +18,7 @@
 
 #include <binaries/efi/efi.h>
 #include <elfloader.h>
+#include <elfloader_common.h>
 
 /* 0xd00dfeed in big endian */
 #define DTB_MAGIC (0xedfe0dd0)
@@ -34,6 +35,7 @@ struct image_info kernel_info;
 struct image_info user_info;
 void const *dtb;
 size_t dtb_size;
+struct mem_info m_info;
 
 extern void finish_relocation(int offset, void *_dynamic, unsigned int total_offset);
 void continue_boot(int was_relocated);

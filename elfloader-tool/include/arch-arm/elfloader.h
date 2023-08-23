@@ -20,14 +20,16 @@ typedef void (*init_arm_kernel_t)(word_t ui_p_reg_start,
                                   word_t dtb_size);
 
 
-/* Enable the mmu. */
+/* Enables the mmu for EL1&0 translation regime. */
 extern void arm_enable_mmu(void);
-extern void arm_enable_hyp_mmu(void);
+/* Switches MMU-related stuff: pagetables, MAIR & TCR etc. Works also if the MMU
+ * was off initially. EL2 translation regime only.
+ */
+extern void arm_switch_to_hyp_tables(void);
 
 
 /* Setup boot VSpace. */
-void init_boot_vspace(struct image_info *kernel_info);
-void init_hyp_boot_vspace(struct image_info *kernel_info);
+void init_boot_vspace(const struct image_info *kernel_info, _Bool has_one_va_range);
 
 /* Assembly functions. */
 extern void flush_dcache(void);

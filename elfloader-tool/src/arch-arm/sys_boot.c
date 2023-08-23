@@ -180,22 +180,22 @@ void continue_boot(int was_relocated)
 
     /* Setup MMU. */
 #if defined(CONFIG_ARM_HYPERVISOR_SUPPORT)
-    init_hyp_boot_vspace(&kernel_info);
+    init_boot_vspace(&kernel_info, 1);
 #else
-    init_boot_vspace(&kernel_info);
+    init_boot_vspace(&kernel_info, 0);
 #endif
 
-    /* If in EL2, disable MMU and I/D cacheability unconditionally */
     if (is_hyp_mode()) {
-        extern void disable_mmu_caches_hyp(void);
         extern void clean_caches_hyp(uint64_t start, uint64_t end);
 
         uint64_t start = kernel_info.phys_region_start;
         uint64_t end = kernel_info.phys_region_end;
         clean_caches_hyp(start, end);
+
         start = (uint64_t)user_info.phys_region_start;
         end = (uint64_t)user_info.phys_region_end;
         clean_caches_hyp(start, end);
+
         start = (uint64_t)_text;
         end = (uint64_t)_end;
         clean_caches_hyp(start, end);
@@ -205,17 +205,13 @@ void continue_boot(int was_relocated)
             clean_caches_hyp(start, end);
         }
 
-#if defined(CONFIG_ARCH_AARCH64)
-        /* Disable the MMU and cacheability unconditionally on ARM64.
-         * The 32 bit ARM platforms do not expect the MMU to be turned
-         * off, so we leave them alone. */
-        disable_mmu_caches_hyp();
-#endif
-
 #if (defined(CONFIG_ARCH_ARM_V7A) || defined(CONFIG_ARCH_ARM_V8A)) && !defined(CONFIG_ARM_HYPERVISOR_SUPPORT)
         extern void leave_hyp(void);
         /* Switch to EL1, assume EL2 MMU already disabled for ARMv8. */
         leave_hyp();
+#else
+        printf("Switch to hypervisor mapping\n");
+        arm_switch_to_hyp_tables();
 #endif
     }
 
@@ -224,8 +220,7 @@ void continue_boot(int was_relocated)
 #endif /* CONFIG_MAX_NUM_NODES */
 
     if (is_hyp_mode()) {
-        printf("Enabling hypervisor MMU and paging\n");
-        arm_enable_hyp_mmu();
+        /* Nothing to be done here, we already switched above */
     } else {
         printf("Enabling MMU and paging\n");
         arm_enable_mmu();

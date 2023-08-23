@@ -16,3 +16,5 @@ struct elfloader_uart_ops {
 
 volatile void *uart_get_mmio(void);
 void uart_set_out(struct elfloader_device *out);
+/* Implemented in mmu.c */
+void mmu_set_uart_base(volatile void *base);

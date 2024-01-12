@@ -140,5 +140,7 @@ static unsigned long exit_boot_services(void)
         }
     }
 
+    m_info.nums = cnt;
+
     return status;
 }

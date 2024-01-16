@@ -19,6 +19,7 @@
 #include <binaries/efi/efi.h>
 #include <elfloader.h>
 #include <elfloader_common.h>
+#include <armv/machine.h>
 
 /* 0xd00dfeed in big endian */
 #define DTB_MAGIC (0xedfe0dd0)
@@ -166,6 +167,21 @@ void main(UNUSED void *arg)
     abort();
 }
 
+static inline void invalidate_dcache_va(void *addr)
+{
+    asm volatile("dc ivac, %0\n\t" :: "r"(addr));
+}
+
+static inline void invalidate_dcache_va_range(uint64_t start, uint64_t end)
+{
+    dsb();
+    for (uint64_t va = start; va < end; va += 64) {
+        invalidate_dcache_va((void *)va);
+    }
+    dsb();
+    isb();
+}
+
 void continue_boot(int was_relocated)
 {
     if (was_relocated) {
@@ -193,6 +209,7 @@ void continue_boot(int was_relocated)
         uint64_t start = kernel_info.phys_region_start;
         uint64_t end = kernel_info.phys_region_end;
         clean_caches_hyp(start, end);
+        invalidate_dcache_va_range(start, end);
 
         start = (uint64_t)user_info.phys_region_start;
         end = (uint64_t)user_info.phys_region_end;

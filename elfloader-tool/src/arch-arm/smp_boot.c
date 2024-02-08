@@ -23,7 +23,7 @@ static volatile int non_boot_lock = 0;
 void arm_disable_dcaches(void);
 
 extern void const *dtb;
-extern uint32_t dtb_size;
+extern size_t dtb_size;
 
 WEAK void non_boot_init(void) {}
 
@@ -35,7 +35,11 @@ void non_boot_main(void)
 #endif
     /* Spin until the first CPU has finished initialisation. */
     while (!non_boot_lock) {
-#ifndef CONFIG_ARCH_AARCH64
+#ifdef CONFIG_ARCH_AARCH64
+        /* The compiler may optimize this loop away, add a dsb()
+         * to force a reload. */
+        dsb();
+#else
         cpu_idle();
 #endif
     }
@@ -43,23 +47,27 @@ void non_boot_main(void)
     /* Initialise any platform-specific per-core state */
     non_boot_init();
 
-#ifndef CONFIG_ARM_HYPERVISOR_SUPPORT
     if (is_hyp_mode()) {
         extern void leave_hyp(void);
+#ifndef CONFIG_ARM_HYPERVISOR_SUPPORT
         leave_hyp();
-    }
 #endif
+    }
     /* Enable the MMU, and enter the kernel. */
     if (is_hyp_mode()) {
+#if defined(CONFIG_ARCH_ARM_V8A)
+        arm_switch_to_hyp_tables();
+#else
         arm_enable_hyp_mmu();
+#endif
     } else {
         arm_enable_mmu();
     }
 
-    /* Jump to the kernel. */
+    /* Jump to the kernel. Note: Our DTB is smaller than 4 GiB. */
     ((init_arm_kernel_t)kernel_info.virt_entry)(user_info.phys_region_start,
                                                 user_info.phys_region_end, user_info.phys_virt_offset,
-                                                user_info.virt_entry, (paddr_t)dtb, dtb_size);
+                                                user_info.virt_entry, (paddr_t)dtb, (uint32_t)dtb_size);
 
     printf("AP Kernel returned back to the elf-loader.\n");
     abort();
@@ -115,7 +123,13 @@ WEAK void init_cpus(void)
             abort();
         }
 
-        while (!is_core_up(num_cpus));
+        while (!is_core_up(num_cpus)) {
+#if defined(CONFIG_ARCH_AARCH64)
+            /* The compiler may optimize this loop away, add a dsb()
+             * to force a reload. */
+            dsb();
+#endif
+        }
         printf("Core %d is up with logic id %d\n", elfloader_cpus[i].cpu_id, num_cpus);
         num_cpus++;
     }
@@ -132,6 +146,13 @@ void smp_boot(void)
     arm_disable_dcaches();
 #endif
     init_cpus();
+#if defined(CONFIG_ARCH_AARCH64)
+    dsb();
     non_boot_lock = 1;
+    /* Secondary CPUs may still run with MMU & caches off. Force the update to be visible. */
+    asm volatile("dc civac, %0\n\t" :: "r"(&non_boot_lock) : "memory");;
+#else
+    non_boot_lock = 1;
+#endif
 }
 #endif /* CONFIG_MAX_NUM_NODES */
